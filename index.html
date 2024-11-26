@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Filmes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+    
+        .search-bar {
+            margin: 20px auto;
+            text-align: center;
+        }
+    
+        .search-bar input {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    
+        .search-bar button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+    
+        .search-bar button:hover {
+            background-color: #0056b3;
+        }
+    
+        .movie-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+    
+        .movie-card {
+            width: 300px;
+            height: 450px;
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+    
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+    
+        .movie-card:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+    
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+        }
+    
+        .card-front {
+            background-color: #ffffff; /* Cor de fundo mais forte */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 0; /* Remover qualquer padding extra */
+            border: 2px solid black;
+            overflow: hidden; /* Garantir que a imagem se ajuste sem transbordar */
+        }
+        
+        .card-front img {
+            width: 100%;
+            height: 100%; /* Ocupa toda a altura do card */
+            object-fit: cover; /* Garantir que a imagem cubra completamente o card */
+            border-radius: 5px;
+        }
+    
+        .card-back {
+            background-color: #ebe9e9;
+            transform: rotateY(180deg);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            overflow-y: auto;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            max-height: 300px;
+        }
+    
+        .card-back p {
+            margin: 10px 0;
+            font-size: 1em;
+            color: #000000;
+        }
+    
+        .platforms {
+            margin-top: 15px;
+            text-align: center;
+        }
+    
+        .platforms img {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            vertical-align: middle;
+            transition: transform 0.3s ease;
+        }
+    
+        .platforms a {
+            text-decoration: none;
+        }
+    
+        .platforms a:hover img {
+            transform: scale(1.1);
+        }
+    
+        .no-results {
+            text-align: center;
+            font-size: 1.2em;
+            color: #777;
+        }
+    
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .movie-card {
+                width: 90%;
+            }
+    
+            .platforms img {
+                width: 35px;
+                height: 35px;
+            }
+        }
+    
+        @media (max-width: 480px) {
+            .movie-card {
+                width: 100%;
+            }
+    
+            .platforms img {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+    
+</head>
+
+<body>
+    <h1>Filmes</h1>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Digite o título do filme">
+        <button onclick="buscarFilmes()">Buscar</button>
+    </div>
+    <div class="movie-list" id="movieList"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/filmes';
+    
+        // Função para buscar filmes
+        async function buscarFilmes() {
+            const input = document.getElementById('searchInput').value;
+        
+            if (input === undefined || input === null || input.trim() === "") {
+                // Se o input for indefinido, nulo ou vazio, não faz a busca.
+                return;
+            }
+        
+            const movieList = document.getElementById('movieList');
+            movieList.innerHTML = '';
+        
+            const inputLower = input.toLowerCase().trim(); // Agora está seguro para usar toLowerCase()
+        
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar os filmes.');
+                }
+        
+                const filmes = await response.json();
+                const filmesFiltrados = filmes.filter(filme =>
+                    filme.titulo_filme.toLowerCase().includes(inputLower)
+                );
+        
+                exibirFilmes(filmesFiltrados);
+            } catch (error) {
+                movieList.innerHTML = `<p class="no-results">Erro: ${error.message}</p>`;
+            }
+        }
+        
+    
+    // Função para buscar filmes
+async function buscarFilmes() {
+    const input = document.getElementById('searchInput').value.toLowerCase().trim();
+    const movieList = document.getElementById('movieList');
+    movieList.innerHTML = '';
+
+    if (!input) {
+        // Se o campo de pesquisa estiver vazio, exibe uma mensagem e não mostra filmes
+        movieList.innerHTML = '<p class="no-results">Digite o título de um filme para buscar.</p>';
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error('Erro ao buscar os filmes.');
+        }
+
+        const filmes = await response.json();
+        const filmesFiltrados = filmes.filter(filme =>
+            filme.titulo_filme.toLowerCase().includes(input)
+        );
+
+        exibirFilmes(filmesFiltrados);
+    } catch (error) {
+        movieList.innerHTML = `<p class="no-results">Erro: ${error.message}</p>`;
+    }
+}
+
+// Função para exibir filmes na página
+function exibirFilmes(filmes) {
+    const movieList = document.getElementById('movieList');
+    movieList.innerHTML = '';
+
+    if (filmes.length === 0) {
+        movieList.innerHTML = '<p class="no-results">Nenhum filme encontrado.</p>';
+        return;
+    }
+
+    filmes.forEach(filme => {
+        const card = document.createElement('div');
+        card.classList.add('movie-card');
+        card.innerHTML = `
+            <div class="card-inner">
+                <!-- Front of the card -->
+                <div class="card-front">
+                    <img src="${filme.poster}" alt="${filme.titulo_filme}">
+                    <h3>${filme.titulo_filme}</h3>
+                </div>
+                <!-- Back of the card -->
+                <div class="card-back">
+                    <p><strong>Idioma:</strong> ${filme.idioma}</p>
+                    <p><strong>Duração:</strong> ${filme.duracao} minutos</p>
+                    <p><strong>Atores:</strong> ${filme.atores_principais.join(', ')}</p>
+                    <p><strong>Ano de Lançamento:</strong> ${filme.ano_lancamento}</p>
+                    <p><strong>Avaliação:</strong> ${filme.avaliacao}/10</p>
+                    <p><strong>Sinopse:</strong> ${filme.sinopse}</p>
+                    <div class="platforms">
+                        <strong></strong>
+                        ${filme.plataformas.map(plataforma => getPlatformIcon(plataforma)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        movieList.appendChild(card);
+    });
+}
+
+
+    
+        // Função para retornar o ícone da plataforma com link
+        function getPlatformIcon(plataforma) {
+            let iconUrl = '';
+            let link = '';
+    
+            switch (plataforma.toLowerCase()) {
+                case 'netflix':
+                    iconUrl = 'https://img.icons8.com/?size=100&id=100836&format=png&color=';
+                    link = 'https://www.netflix.com';
+                    break;
+                case 'amazon prime video':
+                    iconUrl = 'https://img.icons8.com/?size=100&id=eWnxDtGUhrov&format=png&color=';
+                    link = 'https://www.primevideo.com/';
+                    break;
+                case 'disney+':
+                    iconUrl = 'https://img.icons8.com/?size=100&id=4tkTkVC6UFcr&format=png&color=';
+                    link = 'https://www.disneyplus.com';
+                    break;
+                case 'hbo max':
+                    iconUrl = 'https://img.icons8.com/?size=100&id=iLhiOy9JK1oU&format=png&color=';
+                    link = 'https://www.max.com/br/pt';
+                    break;
+                case 'youtube':
+                    iconUrl = 'https://img.icons8.com/?size=100&id=25461&format=png&color=';
+                    link = 'https://www.youtube.com';
+                    break;
+                default:
+                    iconUrl = 'https://via.placeholder.com/40';
+                    link = '#';
+            }
+    
+            return `<a href="${link}" target="_blank"><img src="${iconUrl}" alt="${plataforma}"></a>`;
+        }
+    </script>
+    
+
+</body>
+
+</html>
